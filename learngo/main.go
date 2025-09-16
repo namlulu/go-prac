@@ -64,6 +64,12 @@ func canIDrinkSwitch(age int) bool {
 	}
 }
 
+type person struct {
+	name         string
+	age          int
+	favoriteFood []string
+}
+
 func main() {
 	name := "namlulu"
 	println(name)
@@ -109,4 +115,9 @@ func main() {
 	for key, _ := range namlulu {
 		fmt.Println(key)
 	}
+
+	favoriteFood := []string{"kimchi", "ramen"}
+	namluluChar := person{name: "namlulu", age: 20, favoriteFood: favoriteFood}
+	fmt.Println(namluluChar)
+
 }
