@@ -26,11 +26,17 @@ var baseURL = "https://job.seoul.go.kr/www/job_offer_info/JobOfferInfo.do?method
 
 func main() {
 	var jobs []extractedJob
+	c := make(chan []extractedJob)
 	pages := getPages(baseURL)
 
 	for i := 1; i <= pages; i++ {
-		extractedJobs := getPage(i)
+		go getPage(i, c)
+	}
+
+	for i := 1; i <= pages; i++ {
+		extractedJobs := <-c
 		jobs = append(jobs, extractedJobs...)
+		fmt.Println("Page", i, "done")
 	}
 
 	writeJobs(jobs)
@@ -40,7 +46,7 @@ func cleanString(str string) string {
 	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
 }
 
-func extractJob(s *goquery.Selection) extractedJob {
+func extractJob(s *goquery.Selection, c chan<- extractedJob) {
 	job := extractedJob{}
 	job.company = cleanString(s.Find("td").Eq(0).Text())
 	job.jobTitle = cleanString(s.Find("td.multi_subject strong").Text())
@@ -49,7 +55,7 @@ func extractJob(s *goquery.Selection) extractedJob {
 	job.experience = cleanString(s.Find("td.multi_subject span").Eq(2).Text())
 	job.startDate = cleanString(s.Find("td").Eq(3).Text())
 	job.endDate = cleanString(s.Find("td").Eq(4).Text())
-	return job
+	c <- job
 }
 
 func writeJobs(jobs []extractedJob) {
@@ -70,8 +76,9 @@ func writeJobs(jobs []extractedJob) {
 	}
 }
 
-func getPage(page int) []extractedJob {
+func getPage(page int, mainC chan<- []extractedJob) {
 	var jobs []extractedJob
+	c := make(chan extractedJob)
 	url := baseURL + "&pageIndex=" + strconv.Itoa(page)
 	fmt.Println("Requesting:", url)
 	res, err := http.Get(url)
@@ -86,11 +93,15 @@ func getPage(page int) []extractedJob {
 
 	searchCards := doc.Find(".tb_bbs.list tbody tr")
 	searchCards.Each(func(i int, s *goquery.Selection) {
-		job := extractJob(s)
-		jobs = append(jobs, job)
+		go extractJob(s, c)
 	})
 
-	return jobs
+	for i := 0; i < searchCards.Length(); i++ {
+		job := <-c
+		jobs = append(jobs, job)
+	}
+
+	mainC <- jobs
 }
 
 func getPages(url string) int {
