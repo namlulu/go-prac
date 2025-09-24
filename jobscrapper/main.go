@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -26,21 +28,43 @@ var baseURL = "https://job.seoul.go.kr/www/job_offer_info/JobOfferInfo.do?method
 
 func main() {
 	var jobs []extractedJob
-	c := make(chan []extractedJob)
 	pages := getPages(baseURL)
+	fmt.Println("Total Pages:", pages)
+
+	// 페이지 단위 동시 실행 제한
+	const MaxPageWorkers = 10
+	pageSem := make(chan struct{}, MaxPageWorkers)
+
+	c := make(chan []extractedJob)
+	var wg sync.WaitGroup
 
 	for i := 1; i <= pages; i++ {
-		go getPage(i, c)
+		pageSem <- struct{}{} // 페이지 슬롯 확보
+		wg.Add(1)
+		go func(page int) {
+			defer func() { <-pageSem }() // 슬롯 반환
+			defer wg.Done()
+
+			logRuntimeStatus(fmt.Sprintf("Page %d start", page)) // 시작
+			getPage(page, c)
+			logRuntimeStatus(fmt.Sprintf("Page %d end", page)) // 종료
+		}(i)
 	}
 
-	for i := 1; i <= pages; i++ {
-		extractedJobs := <-c
+	// 결과 수집용 고루틴
+	go func() {
+		wg.Wait()
+		close(c)
+	}()
+
+	for extractedJobs := range c {
 		jobs = append(jobs, extractedJobs...)
-		fmt.Println("Page", i, "done")
 	}
 
 	writeJobs(jobs)
 }
+
+// ---------- 나머지 함수 ----------
 
 func cleanString(str string) string {
 	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
@@ -76,25 +100,30 @@ func writeJobs(jobs []extractedJob) {
 	}
 }
 
+// getPage 안에서 공고 단위 고루틴 제한 적용
 func getPage(page int, mainC chan<- []extractedJob) {
 	var jobs []extractedJob
-	c := make(chan extractedJob)
+
 	url := baseURL + "&pageIndex=" + strconv.Itoa(page)
 	fmt.Println("Requesting:", url)
-	res, err := http.Get(url)
 
+	res, err := http.Get(url)
 	checkErr(err)
 	checkCode(res)
-
 	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	checkErr(err)
 
 	searchCards := doc.Find(".tb_bbs.list tbody tr")
-	searchCards.Each(func(i int, s *goquery.Selection) {
-		go extractJob(s, c)
-	})
+	c := make(chan extractedJob)
+
+	for i := 0; i < searchCards.Length(); i++ {
+		s := searchCards.Eq(i)
+		go func(s *goquery.Selection) {
+			extractJob(s, c)
+		}(s)
+	}
 
 	for i := 0; i < searchCards.Length(); i++ {
 		job := <-c
@@ -106,11 +135,10 @@ func getPage(page int, mainC chan<- []extractedJob) {
 
 func getPages(url string) int {
 	pages := 0
-	res, err := http.Get(url)
 
+	res, err := http.Get(url)
 	checkErr(err)
 	checkCode(res)
-
 	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -133,4 +161,15 @@ func checkCode(res *http.Response) {
 	if res.StatusCode != 200 {
 		log.Fatalln("Request failed with Status:", res.StatusCode)
 	}
+}
+
+// 고루틴 시작/끝마다 호출할 헬퍼 함수
+func logRuntimeStatus(tag string) {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Println("CPU cores:", runtime.NumCPU())
+	fmt.Println("GOMAXPROCS:", runtime.GOMAXPROCS(0))
+	fmt.Printf("[%s] Goroutines: %d | Alloc: %d KB | TotalAlloc: %d KB | Sys: %d KB | NumGC: %d\n",
+		tag, runtime.NumGoroutine(),
+		m.Alloc/1024, m.TotalAlloc/1024, m.Sys/1024, m.NumGC)
 }
