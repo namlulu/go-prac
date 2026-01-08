@@ -1,13 +1,7 @@
 package main
 
-import (
-	"github.com/namlulu/namlulucoin/blockchain"
-)
+import "github.com/namlulu/namlulucoin/rest"
 
 func main() {
-	chain := blockchain.GetBlockchain()
-	chain.AddBlock("First Block")
-	chain.AddBlock("Second Block")
-	chain.AddBlock("Third Block")
-	chain.ListBlocks()
+	rest.Start()
 }

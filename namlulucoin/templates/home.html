@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namlulu Coin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #eee;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(90deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+        .stat-label {
+            color: #888;
+            margin-top: 8px;
+        }
+        .blocks-section h2 {
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .block {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .block:hover {
+            transform: translateX(8px);
+            border-color: #e94560;
+        }
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .block-index {
+            background: #e94560;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .block-data {
+            font-size: 1.1rem;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .block-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #666;
+            word-break: break-all;
+        }
+        .block-hash span {
+            color: #888;
+        }
+        .api-section {
+            margin-top: 50px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 30px;
+        }
+        .api-section h2 {
+            margin-bottom: 20px;
+        }
+        .endpoint {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .method {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .method.get { background: #2ecc71; color: #000; }
+        .method.post { background: #3498db; color: #fff; }
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            color: #fff;
+        }
+        .endpoint-desc {
+            color: #888;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⛓️ Namlulu Coin</h1>
+            <p class="subtitle">Simple Blockchain Implementation in Go</p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">{{.BlockCount}}</div>
+                <div class="stat-label">Total Blocks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">SHA-256</div>
+                <div class="stat-label">Hash Algorithm</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">:4000</div>
+                <div class="stat-label">Server Port</div>
+            </div>
+        </div>
+
+        <section class="blocks-section">
+            <h2>📦 Blocks</h2>
+            {{range $index, $block := .Blocks}}
+            <div class="block">
+                <div class="block-header">
+                    <span class="block-index">Block #{{$index}}</span>
+                </div>
+                <div class="block-data">{{$block.Data}}</div>
+                <div class="block-hash">
+                    <span>Hash:</span> {{$block.Hash}}
+                </div>
+                <div class="block-hash">
+                    <span>Prev:</span> {{if $block.PrevHash}}{{$block.PrevHash}}{{else}}Genesis{{end}}
+                </div>
+            </div>
+            {{end}}
+        </section>
+
+        <section class="api-section">
+            <h2>🔌 API Endpoints</h2>
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-url">/blocks</span>
+                <span class="endpoint-desc">Get all blocks</span>
+            </div>
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-url">/blocks</span>
+                <span class="endpoint-desc">Add new block</span>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
+
