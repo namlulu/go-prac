@@ -1,7 +1,7 @@
 package main
 
-import "github.com/namlulu/namlulucoin/rest"
+import "github.com/namlulu/namlulucoin/explorer"
 
 func main() {
-	rest.Start()
+	explorer.Start()
 }

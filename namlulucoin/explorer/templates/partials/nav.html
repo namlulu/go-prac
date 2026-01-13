@@ -1,0 +1,13 @@
+{{define "nav"}}
+<nav class="navbar">
+    <div class="nav-brand">
+        <a href="/">⛓️ Namlulu Coin</a>
+    </div>
+    <div class="nav-title">{{.}}</div>
+    <ul class="nav-links">
+        <li><a href="/"{{if eq . "Home"}} class="active"{{end}}>Home</a></li>
+        <li><a href="/blocks"{{if eq . "API"}} class="active"{{end}}>API</a></li>
+    </ul>
+</nav>
+{{end}}
+
