@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	port            = ":4000"
 	contentTypeJSON = "application/json"
 	templatesDir    = "explorer/templates/*.html"
 	partialsDir     = "explorer/templates/partials/*.html"
@@ -90,7 +89,8 @@ func addBlockForm(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
-func Start() {
+func Start(port int) {
+	handler := http.NewServeMux()
 	templates = template.Must(template.ParseGlob(templatesDir))
 	templates = template.Must(templates.ParseGlob(partialsDir))
 
@@ -98,6 +98,6 @@ func Start() {
 	http.HandleFunc("/add", addBlockForm)
 	http.HandleFunc("/blocks", blocksHandler)
 
-	fmt.Printf("🚀 Server running on http://localhost%s\n", port)
-	log.Fatal(http.ListenAndServe(port, nil))
+	fmt.Printf("🚀 Server running on http://localhost%d\n", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), handler))
 }

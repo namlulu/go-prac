@@ -30,14 +30,14 @@ func (b *blockchain) AddBlock(data string) *Block {
 	return newBlock
 }
 
+func (b *blockchain) AllBlocks() []*Block {
+	return b.blocks
+}
+
 func createBlock(data string) *Block {
 	newBlock := Block{Data: data, PrevHash: getLastHash()}
 	newBlock.calculateHash()
 	return &newBlock
-}
-
-func (b *blockchain) AllBlocks() []*Block {
-	return b.blocks
 }
 
 func getLastHash() string {
